@@ -24,37 +24,43 @@ Then call ``$.scrolline();`` to launch the plugin.
 
 You can apply a set of optional options:
 
-* ``backColor`` - Define the color of back's scrolline (default ``'#ecf0f1'``)
-* ``direction`` - Can be **vertical** or **horizontal** (default ``'horizontal'``)
-* ``frontColor`` - Define the color of front's scrolline (default ``'#2ecc71'``)
-* ``opacity`` - Define alpha's scrolline, value must be between **0** and **1** (default ``1``)
-* ``position`` -  Define the position of scrolline : **top** and **bottom** for horizontal's position, **left** or **right** for vertical's position (default ``top`` in horizontal and ``left`` in vertical)
-* ``reverse`` - Revert the front line sens on set value at **true** (default ``false``)
-* ``weight`` - Define the larger of scrolline on pixels (default ``5``)
-* ``zindex`` - Change the z-index value if needed (default ``10``)
-* ``scrollEnd`` - Callback's **function** call at the end of scrolling
+* ``includeInitialScreen`` (Boolean) - Determines whether the scrolline will include the initial screen (default ``false``)
+* ``direction`` (String) - Can be **vertical** or **horizontal** (default ``'horizontal'``)
+* ``position`` (String) -  Define the position of the scrolline : **top** and **bottom** for the horizontal position, **left** or **right** for the vertical position (default ``top`` for horizontal and ``left`` for vertical)
+* ``reverse`` (Boolean) - Revert the scrolline's direction (default ``false``)
+* ``scrollEnd`` (Function) - Callback function to be executed at the end of scrolling
+* ``styles`` (Object) - Styling of the scrollines
+* ``styles.backColor`` (String) - Define the color of back's scrolline. The possible values are regular color values used in CSS like: ``#ffffff``, ``#fff``, ``rgb(255, 255, 255)`` or ``transparent``  (default ``'#ecf0f1'``)
+* ``styles.frontColor`` (String) - Define the color of front's scrolline (default ``'#2ecc71'``)
+* ``styles.opacity`` (Number) - Define alpha's scrolline, value must be between **0** and **1** (default ``1``)
+* ``styles.weight`` (Number) - Define the width of the vertical scrolline (or the height of the horizontal) in pixels (default ``5``)
+* ``styles.zIndex`` (Number) - Change the z-index value if needed (default ``10``)
 
 ### Example
 
-Scrolline revert with custom color at bottom position:
+Reverse scrolline with custom colors at the bottom of the screen:
 
 ```js
 $.scrolline({
-    reverse : true,
-    position : 'bottom',
-    backColor : '#2980b9',
-    frontColor : '#f1c40f',
-    weight : 12
+    reverse: true,
+    position: 'bottom',
+    styles: {
+        backColor : '#2980b9',
+        frontColor : '#f1c40f',
+        weight : 12
+    }
 });
 ```
 
-Scrolline vertical at right position with callback:
+Vertical scrolline at the right side of the screen with a callback:
 
 ```js
 $.scrolline({
-    position : 'right',
-    direction : 'vertical',
-    weight : 30,
+    position: 'right',
+    direction: 'vertical',
+    styles: {
+        weight: 30,
+    },
     scrollEnd : function() {
 		alert('End of scroll!');
 	}
@@ -72,6 +78,10 @@ $.scrolline({
 ## Credits
 
 ### Author
+[Alex Bondarev](http://alexbondarev.com)
+You can find me on twitter [@skip405](http://twitter.com/skip405)
+
+### Original idea
 [Anthony Ly](http://anthonyly.com), on twitter [@Pik_at](http://twitter.com/pik_at)
 
 ### Licence
