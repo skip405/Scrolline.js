@@ -1,151 +1,172 @@
 /*
-* Scrolline.js - Create an indication bar line of scroll position
-* Basic usage : $.scrolline();
-* ---
-* Version: 1.0
-* Copyright 2014, Anthony Ly (http://anthonyly.com)
-* Released under the MIT Licence
-*/
+ * Scrolline.js - Create an indication bar line of scroll position
+ * Basic usage : $.scrolline();
+ * ---
+ * Version: 1.0
+ * Based on the fabulous Scrolline.js by Anthony Ly (http://anthonyly.com) and refactored by Alex Bondarev (http://alexbondarev.com)
+ * Released under the MIT Licence
+ */
 
 (function($, window, document, undefined) {
-    $.extend({
-        scrolline: function (options) {
-            var defaults = {
-                backColor   : '#ecf0f1',
-                direction   : 'horizontal',
-                frontColor  : '#2ecc71',
-                opacity     : 1,
-                position    : 'top',
-                reverse     : false,
-                weight      : 5,
-                zindex      : 10,
-                scrollEnd   : function() {}
+    function Scrolline(options) {
+        this.options = $.extend({}, {
+            direction: 'horizontal',
+            position: 'top',
+            reverse: false,
+            includeInitialScreen: true,
+            autoReinitialise: false,
+            autoReinitialiseIntervalTime: 1000,
+            styles: {
+                backColor: '#ecf0f1',
+                frontColor: '#2ecc71',
+                opacity: 1,
+                weight: 5,
+                zIndex: 10
+            },
+            onScrollEnd: function() {}
+        }, options);
+
+        this.$back = $('<div />', {
+            css: {
+                transform: "translateZ(0)",
+                margin: 0,
+                padding: 0,
+                overflow: 'hidden',
+                position: 'fixed'
+            }
+        }).appendTo('body').hide();
+        this.$front = $('<div />', {
+            css: {
+                margin: 0,
+                padding: 0,
+                overflow: 'hidden',
+                position: 'absolute'
+            }
+        }).appendTo(this.$back);
+
+        this.waitForFinalEvent = (function () {
+            var timers = {};
+            return function (callback, ms, uniqueId) {
+                if (!uniqueId) {
+                    uniqueId = "Don't call this twice without a uniqueId";
+                }
+                if (timers[uniqueId]) {
+                    clearTimeout(timers[uniqueId]);
+                }
+                timers[uniqueId] = setTimeout(callback, ms);
+            };
+        })();
+
+        this.init();
+    }
+
+    Scrolline.prototype = {
+        init: function() {
+            this.$window = $(window);
+            this.$document = $(document);
+
+            if( this.options.direction != 'vertical' ) this.options.direction = 'horizontal';
+            if( this.options.direction == 'vertical' && this.options.position != 'right' ) this.options.position = 'left';
+            if( this.options.direction == 'horizontal' && this.options.position != 'bottom' ) this.options.position = 'top';
+
+            this.calculateDimensions();
+            this.setBack();
+            this.setFront();
+        },
+
+        calculateDimensions: function(){
+            this.windowHeight = this.$window.height();
+            this.initialOffset = this.options.includeInitialScreen ? this.options.direction === 'horizontal' ? this.windowHeight : this.$window.width() : 0;
+            this.maxScrollTop = this.$document.height() - this.windowHeight + this.initialOffset;
+        },
+
+        setBack: function(){
+            this.backStyles = {
+                backgroundColor: this.options.styles.backColor,
+                zIndex: this.options.styles.zIndex
             };
 
-            function Plugin(options) {
-                this.params = $.extend(defaults, options);
-                this.$back = $(document.createElement('div'));
-                this.$front = $(document.createElement('div'));
-                this.init();
+            if( this.options.direction === 'horizontal' ){
+                this.backStyles.width = '100%';
+                this.backStyles.height = this.options.styles.weight;
+                this.backStyles.left = 0;
+
+                if(this.options.position == 'bottom') {
+                    this.backStyles.bottom = 0;
+                } else {
+                    this.backStyles.top = 0;
+                }
+            } else {
+                this.backStyles.width = this.options.styles.weight;
+                this.backStyles.height = '100%';
+                this.backStyles.top = 0;
+
+                if(this.options.position == 'right') {
+                    this.backStyles.right = 0;
+                } else {
+                    this.backStyles.left = 0;
+                }
             }
 
-            Plugin.prototype = {
-                init : function() {
-                    var self = this,
-                        tBack, rBack, bBack, lBack, bgBack,
-                        tFront, rFront, bFront, lFront, bgFront;
+            this.$back.css(this.backStyles).show();
+        },
 
-                    // Direction and position
-                    if(self.params.direction != 'vertical') self.params.direction = 'horizontal';
-                    if(self.params.direction == 'vertical' && self.params.position != 'right') self.params.position = 'left';
-                    if(self.params.direction == 'horizontal' && self.params.position != 'bottom') self.params.position = 'top';
-
-                    if(self.params.direction == 'vertical') {
-                        bBack = tBack = 0;
-                        if(self.params.position == 'right') {
-                            rBack = 0;
-                            lBack = 'auto';
-                        } else {
-                            rBack = 'auto';
-                            lBack = 0;
-                        }
-                    } else {
-                        rBack = lBack = 0;
-                        if(self.params.position == 'bottom') {
-                            tBack = 'auto';
-                            bBack = 0;
-                        } else {
-                            tBack =  0;
-                            bBack = 'auto';
-                        }
-                    }
-
-                    if(self.params.reverse && self.params.reverse === true) {
-                        if(self.params.direction == 'vertical') {
-                            bFront = rFront = lFront = 0;
-                            tFront = 'auto';
-                        } else {
-                            bFront = rFront = rFront = 0;
-                            lFront = 'auto';
-                        }
-                    } else {
-                        tFront = lFront = 0;
-                        bFront = rFront = 'auto';
-                    }
-
-                    self.$front.css({
-                        background : self.params.frontColor,
-                        bottom : bFront,
-                        height : 0,
-                        left : lFront,
-                        margin: 0,
-                        overflow: 'hidden',
-                        padding: 0,
-                        position: 'absolute',
-                        right : rFront,
-                        top: tFront,
-                        width : 0
-                    }).appendTo(self.$back);
-
-                    self.$back.css({
-                        background : self.params.backColor,
-                        bottom: bBack,
-                        height : 0,
-                        left : lBack,
-                        opacity: self.params.opacity,
-                        margin: 0,
-                        overflow: 'hidden',
-                        position: 'fixed',
-                        padding: 0,
-                        right : rBack,
-                        top: tBack,
-                        width : 0,
-                        zIndex : self.params.zindex,
-                    }).appendTo('body');
-
-                    $(window).on("load resize scroll orientationchange", function() {
-                        self.scrollListener();
-                    });
-                },
-
-                scrollListener : function() {
-                    var self = this,
-                        hWin = $(window).height(),
-                        wWin = $(window).width(),
-                        hDoc = $(document).height(),
-                        scrollValue = $(window).scrollTop(),
-                        wBack, hBack, wFront, hFront, scrollineVal, wRef;
-
-                    if(self.params.direction == 'vertical') {
-                        scrollineVal = (scrollValue + hWin) * hWin / hDoc;
-                        wBack = self.params.weight;
-                        hBack = wRef = hWin;
-                        wFront = self.params.weight;
-                        hFront = scrollineVal;
-                    } else {
-                        scrollineVal = (scrollValue + hWin) * wWin / hDoc;
-                        wBack = wRef = wWin;
-                        hBack = self.params.weight;
-                        wFront = scrollineVal;
-                        hFront = self.params.weight;
-                    }
-
-                    self.$back.css({
-                        height: hBack,
-                        width: wBack
-                    });
-                    self.$front.css({
-                        height: hFront,
-                        width: wFront
-                    });
-
-                    if(scrollineVal >= wRef) {
-                        self.params.scrollEnd();
-                    }
-                }
+        setFront: function(){
+            this.frontProperty = 'width';
+            this.frontStyles = {
+                backgroundColor: this.options.styles.frontColor
             };
 
-            new Plugin(options);
+            if( this.options.direction === 'horizontal' ){
+                this.frontStyles.height = this.options.styles.weight;
+                this.frontStyles.top = 0;
+
+                if( this.options.reverse ) {
+                    this.frontStyles.right = 0;
+                } else {
+                    this.frontStyles.left = 0;
+                }
+            } else {
+                this.frontStyles.width = this.options.styles.weight;
+                this.frontStyles.left = 0;
+                this.frontProperty = 'height';
+
+                if( this.options.reverse ) {
+                    this.frontStyles.bottom = 0;
+                } else {
+                    this.frontStyles.top = 0;
+                }
+            }
+
+            this.$front.css(this.frontStyles);
+
+            this.addListeners();
+        },
+
+        addListeners: function() {
+            var self = this;
+
+            this.$window
+                .on('scroll.scrolline load.scrolline orientationchange.scrolline', function(){
+                    self.updateFront();
+                })
+                .on('resize.scrolline', function(){
+                    self.calculateDimensions();
+
+                    self.waitForFinalEvent(function(){
+                        self.updateFront();
+                    }, 160, 'scrolline');
+                });
+        },
+
+        updateFront: function(){
+            this.$front.css(this.frontProperty, ( this.initialOffset + this.$window.scrollTop() ) * 100 / this.maxScrollTop + '%');
+        }
+    };
+
+    $.extend({
+        scrolline: function (options) {
+            window.Scrolline = new Scrolline(options);
         }
     });
 })(jQuery, window, document);
